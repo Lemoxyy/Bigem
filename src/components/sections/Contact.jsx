@@ -9,7 +9,7 @@ export const Contact = () => {
   });
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState(null);
-  const [statusType, setStatusType] = useState(null); // "success" or "error"
+  const [statusType, setStatusType] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -17,11 +17,14 @@ export const Contact = () => {
     setStatusMessage(null);
 
     try {
-      const res = await fetch("http://localhost:5000/send-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+      const res = await fetch(
+        "https://your-vercel-backend.vercel.app/api/send-email",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        },
+      );
 
       const data = await res.json();
 
@@ -30,7 +33,7 @@ export const Contact = () => {
         setStatusType("success");
         setFormData({ name: "", email: "", message: "" });
       } else {
-        setStatusMessage("Failed to send message. Please try again.");
+        setStatusMessage("Failed to send message: " + data.message);
         setStatusType("error");
       }
     } catch (error) {
@@ -40,8 +43,6 @@ export const Contact = () => {
     }
 
     setLoading(false);
-
-    // Automatically clear message after 5 seconds
     setTimeout(() => {
       setStatusMessage(null);
       setStatusType(null);
