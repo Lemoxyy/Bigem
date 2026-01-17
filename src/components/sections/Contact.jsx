@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { RevealOnScroll } from "../RevealOnScroll";
-import emailjs from "@emailjs/browser";
 
 export const Contact = () => {
   const [formData, setFormData] = useState({
@@ -8,22 +7,45 @@ export const Contact = () => {
     email: "",
     message: "",
   });
+  const [loading, setLoading] = useState(false);
+  const [statusMessage, setStatusMessage] = useState(null);
+  const [statusType, setStatusType] = useState(null); // "success" or "error"
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setStatusMessage(null);
 
-    emailjs
-      .sendForm("template_pfg9tjm", "service_hyp6iwt", "ebnBRM6Ql8qs6VfVP")
-      .then(
-        () => {
-          alert("Message sent successfully!");
-          setFormData({ name: "", email: "", message: "" });
-        },
-        (error) => {
-          console.error(error);
-          alert("Failed to send message. Please try again.");
-        }
-      );
+    try {
+      const res = await fetch("http://localhost:5000/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setStatusMessage("Message sent successfully!");
+        setStatusType("success");
+        setFormData({ name: "", email: "", message: "" });
+      } else {
+        setStatusMessage("Failed to send message. Please try again.");
+        setStatusType("error");
+      }
+    } catch (error) {
+      console.error(error);
+      setStatusMessage("Failed to connect to the server.");
+      setStatusType("error");
+    }
+
+    setLoading(false);
+
+    // Automatically clear message after 5 seconds
+    setTimeout(() => {
+      setStatusMessage(null);
+      setStatusType(null);
+    }, 5000);
   };
 
   return (
@@ -41,7 +63,7 @@ export const Contact = () => {
             <div>
               <input
                 type="text"
-                name="from_name"
+                name="name"
                 required
                 value={formData.name}
                 placeholder="Name..."
@@ -55,7 +77,7 @@ export const Contact = () => {
             <div>
               <input
                 type="email"
-                name="from_email"
+                name="email"
                 required
                 value={formData.email}
                 placeholder="example@gmail.com"
@@ -80,11 +102,24 @@ export const Contact = () => {
               />
             </div>
 
+            {statusMessage && (
+              <p
+                className={`text-center font-medium ${
+                  statusType === "success" ? "text-green-400" : "text-red-400"
+                }`}
+              >
+                {statusMessage}
+              </p>
+            )}
+
             <button
               type="submit"
-              className="w-full bg-blue-500 text-white py-3 px-6 rounded font-medium transition hover:-translate-y-0.5 hover:shadow-[0_0_15px_rgba(59,130,246,0.4)]"
+              disabled={loading}
+              className={`w-full bg-blue-500 text-white py-3 px-6 rounded font-medium transition hover:-translate-y-0.5 hover:shadow-[0_0_15px_rgba(59,130,246,0.4)] ${
+                loading ? "opacity-50 cursor-not-allowed" : ""
+              }`}
             >
-              Send Message
+              {loading ? "Sending..." : "Send Message"}
             </button>
           </form>
         </div>
